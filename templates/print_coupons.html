@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="am">
+<head>
+    <meta charset="UTF-8">
+    <title>Print Coupons</title>
+    <style>
+        body {
+            font-family: 'Nyala', Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        .coupon {
+            width: 80mm;
+            padding: 10px;
+            margin: 0 auto 20px auto;
+            border: 1px dashed #000;
+            page-break-after: always;
+            text-align: right;
+        }
+        .qr-container {
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        .details {
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        @media print {
+            body { background: none; }
+            .no-print { display: none; }
+            .coupon { border: none; margin: 0; width: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="no-print" style="text-align: center; margin: 20px;">
+        <button onclick="window.print()" style="padding: 12px 24px; font-size: 18px; background: #007bff; color: white; border: none; cursor: pointer;">Print All Coupons</button>
+    </div>
+
+    {% for emp in employees %}
+    <div class="coupon">
+        <div class="qr-container">
+            <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data={{ emp.id }}" alt="QR Code" width="130">
+        </div>
+        <div class="details">
+            <p><strong>በኮልፌ ቀራኒዮ ክፍለ ከተማ</strong></p>
+            <p><strong>መለያ ቁጥር :-</strong> {{ emp.id }}</p>
+            <p><strong>ቻል :-</strong> {{ emp.role }}</p>
+            <p><strong>የሠራተኛው ስም :-</strong> {{ emp.name }}</p>
+            <p><strong>የሚሠሩበት ተቋም :-</strong> {{ emp.department }}</p>
+        </div>
+    </div>
+    {% endfor %}
+
+</body>
+</html>
