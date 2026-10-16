@@ -2,3 +2,4 @@ Flask
 Flask-SQLAlchemy
 waitress
 gunicorn
+Pillow>=10.0.0
