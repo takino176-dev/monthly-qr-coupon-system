@@ -13,14 +13,13 @@ def upload_file():
     if request.method == 'POST':
         file = request.files.get('file')
         if file:
-            # Use utf-8-sig to automatically handle Excel's hidden BOM characters
-            stream = io.TextIOWrapper(file.stream, encoding='utf-8-sig')
-            csv_reader = csv.DictReader(stream)
+            # Read Unicode Text (tab-delimited) with utf-16 encoding
+            stream = io.TextIOWrapper(file.stream, encoding='utf-16')
+            csv_reader = csv.DictReader(stream, delimiter='\t')
             
             employees = []
             for row in csv_reader:
-                # Clean whitespace from keys and values
-                cleaned_row = {k.strip(): v.strip() for k, v in row.items() if k and v}
+                cleaned_row = {k.strip().lower(): v.strip() for k, v in row.items() if k and v}
                 employees.append(cleaned_row)
                 
             return render_template('print_coupons.html', employees=employees)
