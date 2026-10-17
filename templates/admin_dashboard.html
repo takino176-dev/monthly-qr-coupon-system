@@ -18,15 +18,16 @@
     <div class="container my-4">
 
         <!-- Flash Messages -->
-        with messages = get_flashed_messages(with_categories=true)
-        if messages:
-            for category, message in messages:
-                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-                    {{ message }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                </div>
-            endfor
-        endif
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
 
         <!-- Top Metrics Cards -->
         <div class="row text-center mb-4">
@@ -131,20 +132,20 @@
                         </tr>
                     </thead>
                     <tbody>
-                        for user in users:
+                        {% for user in users %}
                         <tr>
                             <td>{{ user.username }}</td>
                             <td><span class="badge bg-secondary">{{ user.role }}</span></td>
                             <td>
-                                if user.role == 'employee'
+                                {% if user.role == 'employee' %}
                                     {% set emp = employees|selectattr('emp_id', 'equalto', user.username)|first %}
                                     {{ emp.balance if emp else '0.0' }} Coupons
-                                else
+                                {% else %}
                                     Active Account
-                                endif
+                                {% endif %}
                             </td>
                         </tr>
-                        endfor
+                        {% endfor %}
                     </tbody>
                 </table>
             </div>
