@@ -1,41 +1,150 @@
-<!-- Monthly Coupon Distribution Section -->
-<div class="row g-4 mb-5">
-    <!-- Option A: Bulk Release via Excel Upload -->
-    <div class="col-md-6">
-        <div class="card shadow-sm h-100 border-primary">
-            <div class="card-body">
-                <h4 class="card-title text-primary mb-3">Bulk Monthly Release (Excel)</h4>
-                <p class="text-muted">Upload an `.xlsx` file to release monthly coupons for all employees at once and auto-register accounts.</p>
-                <form method="POST" action="/admin/dashboard" enctype="multipart/form-data">
-                    <div class="mb-3">
-                        <label class="form-label font-weight-bold">Select Employee Excel File</label>
-                        <input type="file" name="file" class="form-control" accept=".xlsx" required>
-                    </div>
-                    <button type="submit" class="btn btn-primary w-100">Release & Generate All Coupons</button>
-                </form>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Master Dashboard</title>
+    <!-- Bootstrap 5 CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+</head>
+<body class="bg-light">
+    <div class="container py-5">
+        
+        <!-- Header & Top Navigation -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="fw-bold text-dark">Admin Master Control Center</h2>
+            <div>
+                <a href="/admin/reports" class="btn btn-outline-primary me-2">Print & View Reports</a>
+                <a href="/logout" class="btn btn-outline-danger">Logout</a>
             </div>
         </div>
-    </div>
 
-    <!-- Option B: Single Employee Release -->
-    <div class="col-md-6">
-        <div class="card shadow-sm h-100 border-success">
-            <div class="card-body">
-                <h4 class="card-title text-success mb-3">Single Coupon Release</h4>
-                <p class="text-muted">Manually release a monthly coupon for an individual employee or new hire.</p>
-                <form method="POST" action="/admin/release-coupon/single">
-                    <div class="mb-2">
-                        <input type="text" name="emp_id" class="form-control" placeholder="Employee ID (e.g., EMP-101)" required>
+        <!-- Flash Alert Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+              <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                {{ message }}
+              </div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+
+        <!-- Row 1: Distribution & Merchant Creation -->
+        <div class="row g-4 mb-5">
+            
+            <!-- Card A: Monthly Coupon Distribution -->
+            <div class="col-lg-7">
+                <div class="card shadow-sm h-100 border-0">
+                    <div class="card-header bg-primary text-white font-weight-bold">
+                        <h5 class="mb-0">Monthly Coupon Release</h5>
                     </div>
-                    <div class="mb-2">
-                        <input type="text" name="emp_name" class="form-control" placeholder="Employee Name (Optional / Amharic)">
+                    <div class="card-body">
+                        <!-- Bulk Excel Upload -->
+                        <form method="POST" action="/admin/dashboard" enctype="multipart/form-data" class="mb-4">
+                            <label class="form-label fw-bold">1. Bulk Monthly Release (Excel)</label>
+                            <p class="text-muted small">Upload an <code>.xlsx</code> file to release coupons for all employees and auto-register new accounts.</p>
+                            <div class="input-group">
+                                <input type="file" name="file" class="form-control" accept=".xlsx" required>
+                                <button type="submit" class="btn btn-primary">Release All</button>
+                            </div>
+                        </form>
+
+                        <hr class="my-4">
+
+                        <!-- Single ID Release -->
+                        <form method="POST" action="/admin/release-coupon/single">
+                            <label class="form-label fw-bold">2. Single Employee Release</label>
+                            <p class="text-muted small">Release a coupon for an individual employee or new hire.</p>
+                            <div class="row g-2">
+                                <div class="col-md-4">
+                                    <input type="text" name="emp_id" class="form-control" placeholder="Employee ID" required>
+                                </div>
+                                <div class="col-md-4">
+                                    <input type="text" name="emp_name" class="form-control" placeholder="Name (Optional)">
+                                </div>
+                                <div class="col-md-4">
+                                    <button type="submit" class="btn btn-success w-100">Release Single</button>
+                                </div>
+                            </div>
+                        </form>
                     </div>
-                    <div class="mb-3">
-                        <input type="text" name="department" class="form-control" placeholder="Department (Optional)">
+                </div>
+            </div>
+
+            <!-- Card B: Create Merchant Account -->
+            <div class="col-lg-5">
+                <div class="card shadow-sm h-100 border-0">
+                    <div class="card-header bg-info text-white">
+                        <h5 class="mb-0">Create Merchant Account</h5>
                     </div>
-                    <button type="submit" class="btn btn-success w-100">Release & Print Single Coupon</button>
-                </form>
+                    <div class="card-body">
+                        <p class="text-muted small">Add new cafeteria or vendor accounts to collect employee coupons.</p>
+                        <form method="POST" action="/admin/add-user">
+                            <input type="hidden" name="role" value="merchant">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Merchant / Vendor Username</label>
+                                <input type="text" name="username" class="form-control" placeholder="e.g. Cafeteria_Bole" required>
+                            </div>
+                            <button type="submit" class="btn btn-info text-white w-100 fw-bold">Create Merchant Account</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Row 2: Account Management Table -->
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-dark text-white">
+                <h5 class="mb-0">System Accounts (Employees & Merchants)</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Username / ID</th>
+                                <th>Role</th>
+                                <th>Password Status</th>
+                                <th class="text-end">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for user in users %}
+                            <tr>
+                                <td><strong>{{ user.username }}</strong></td>
+                                <td>
+                                    {% if user.role == 'merchant' %}
+                                        <span class="badge bg-info text-dark">Merchant</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">Employee</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if user.is_initial_password %}
+                                        <span class="badge bg-warning text-dark">Default Password</span>
+                                    {% else %}
+                                        <span class="badge bg-success">Password Changed</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end">
+                                    <form action="/admin/reset-password/{{ user.id }}" method="POST" class="d-inline" onsubmit="return confirm('Reset password for {{ user.username }} to welcome123?');">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger">Reset Password</button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="4" class="text-center text-muted py-4">No accounts registered yet. Upload an Excel sheet or add a merchant to start.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
+
     </div>
-</div>
+</body>
+</html>
