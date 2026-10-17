@@ -3,116 +3,113 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Master Control Center</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
-    <style>
-        body { background-color: #f8f9fa; font-family: system-ui, -apple-system, sans-serif; }
-        .card-custom { border: 1px solid #dee2e6; border-radius: 0.5rem; background: #fff; box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.02); }
-        .metric-card { padding: 1.25rem; }
-    </style>
+    <title>Admin Dashboard - Kolfe Employee Coupon System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/css/bootstrap.min.css" rel="stylesheet">
 </head>
-<body>
-    <div class="container py-4" style="max-width: 1200px;">
-        
-        <!-- Header -->
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h3 class="fw-bold text-dark mb-0">Admin Master Control Center</h3>
-            <div class="d-flex align-items-center gap-3">
-                <a href="/logout" class="btn btn-outline-danger btn-sm">Logout</a>
-            </div>
+<body class="bg-light">
+
+    <nav class="navbar navbar-dark bg-dark shadow-sm">
+        <div class="container-fluid">
+            <span class="navbar-brand mb-0 h1">Admin Master Control Center</span>
+            <a href="{{ url_for('logout') }}" class="btn btn-outline-light btn-sm">Logout</a>
         </div>
+    </nav>
+
+    <div class="container my-4">
 
         <!-- Flash Messages -->
-        {% with messages = get_flashed_messages(with_categories=true) %}
-          {% if messages %}
-            {% for category, message in messages %}
-              <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-                {{ message }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-              </div>
-            {% endfor %}
-          {% endif %}
-        {% endwith %}
+        with messages = get_flashed_messages(with_categories=true)
+        if messages:
+            for category, message in messages:
+                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            endfor
+        endif
 
-        <!-- Top Metric Cards Row -->
-        <div class="row g-3 mb-4">
+        <!-- Top Metrics Cards -->
+        <div class="row text-center mb-4">
             <div class="col-md-3">
-                <div class="card-custom metric-card h-100">
-                    <div class="text-muted mb-1"><i class="bi bi-people fs-5 me-1"></i> Registered Employees</div>
-                    <h3 class="fw-bold mb-0">{{ emp_count }}</h3>
+                <div class="card shadow-sm p-3">
+                    <h6 class="text-muted">Registered Employees</h6>
+                    <h3>{{ emp_count }}</h3>
                 </div>
             </div>
             <div class="col-md-3">
-                <div class="card-custom metric-card h-100">
-                    <div class="text-muted mb-1"><i class="bi bi-wallet2 fs-5 me-1"></i> Total Balance</div>
-                    <h3 class="fw-bold mb-0">{{ "%.2f"|format(total_emp_balance) }}</h3>
+                <div class="card shadow-sm p-3">
+                    <h6 class="text-muted">Total Balance</h6>
+                    <h3>{{ "%.2f"|format(total_emp_balance) }}</h3>
                 </div>
             </div>
             <div class="col-md-3">
-                <div class="card-custom metric-card h-100">
-                    <div class="text-muted mb-1"><i class="bi bi-shop fs-5 me-1"></i> Merchants</div>
-                    <h3 class="fw-bold mb-0">{{ merchant_count }}</h3>
+                <div class="card shadow-sm p-3">
+                    <h6 class="text-muted">Merchants</h6>
+                    <h3>{{ merchant_count }}</h3>
                 </div>
             </div>
             <div class="col-md-3">
-                <div class="card-custom metric-card h-100">
-                    <div class="text-muted mb-1"><i class="bi bi-receipt fs-5 me-1"></i> Spent This Month</div>
-                    <h3 class="fw-bold mb-0">{{ "%.2f"|format(spent_this_month) }}</h3>
+                <div class="card shadow-sm p-3">
+                    <h6 class="text-muted">Spent This Month</h6>
+                    <h3>{{ "%.2f"|format(spent_this_month) }}</h3>
                 </div>
             </div>
         </div>
 
-        <div class="row g-4 mb-4">
-            <!-- Monthly Coupon Release -->
-            <div class="col-lg-8">
-                <div class="card-custom p-4 h-100 border-primary">
-                    <h5 class="fw-bold mb-3 text-primary"><i class="bi bi-calendar-check me-2"></i>Monthly Coupon Release</h5>
-                    
-                    <!-- 1. Bulk Excel Release -->
-                    <form action="/admin/upload-employees" method="POST" enctype="multipart/form-data" class="mb-4">
-                        <label class="form-label fw-semibold small">1. Bulk Monthly Release (Excel .xlsx)</label>
-                        <div class="input-group">
-                            <input type="file" name="file" class="form-control" accept=".xlsx" required>
-                            <button type="submit" class="btn btn-primary fw-bold">Release All</button>
-                        </div>
-                    </form>
+        <div class="row">
+            <!-- Monthly Rule & Bulk Upload Section -->
+            <div class="col-md-7">
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-white">
+                        <h5 class="mb-0">Set Monthly Coupon Rules</h5>
+                    </div>
+                    <div class="card-body">
+                        <form action="{{ url_for('set_rule') }}" method="POST">
+                            <div class="mb-3">
+                                <label class="form-label">Month Period</label>
+                                <input type="text" name="month_period" class="form-control" value="{{ current_month }}" readonly>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Working Days (Default Coupon Allocation)</label>
+                                <input type="number" name="working_days" class="form-control" value="{{ current_rule.working_days }}" required>
+                            </div>
+                            <button type="submit" class="btn btn-success">Save Monthly Rule</button>
+                        </form>
+                    </div>
+                </div>
 
-                    <!-- 2. Single Employee Release -->
-                    <form action="/admin/release-single" method="POST">
-                        <label class="form-label fw-semibold small">2. Single Employee Release / New Hire</label>
-                        <div class="row g-2">
-                            <div class="col-md-5">
-                                <input type="text" name="emp_id" class="form-control" placeholder="Employee ID" required>
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-white">
+                        <h5 class="mb-0">Bulk Monthly Release (Excel .xlsx)</h5>
+                    </div>
+                    <div class="card-body">
+                        <form action="{{ url_for('upload_employees') }}" method="POST" enctype="multipart/form-data">
+                            <div class="input-group mb-3">
+                                <input type="file" name="file" class="form-control" required accept=".xlsx">
+                                <button type="submit" class="btn btn-primary">Release All</button>
                             </div>
-                            <div class="col-md-4">
-                                <input type="text" name="name" class="form-control" placeholder="Name (Optional)">
-                            </div>
-                            <div class="col-md-3">
-                                <button type="submit" class="btn btn-success w-100 fw-bold">Release Single</button>
-                            </div>
-                        </div>
-                    </form>
+                        </form>
+                    </div>
                 </div>
             </div>
 
-            <!-- Create Merchant Account -->
-            <div class="col-lg-4">
-                <div class="card-custom p-4 h-100">
-                    <h5 class="fw-bold mb-3"><i class="bi bi-shop-window me-2"></i>Create Merchant Account</h5>
-                    <form action="/admin/add-merchant" method="POST">
-                        <div class="mb-3">
-                            <label class="form-label small text-muted">Merchant Username</label>
-                            <input type="text" name="username" class="form-control" placeholder="e.g., Cafeteria_Bole" required>
-                        </div>
-                        <button type="submit" class="btn btn-dark w-100 fw-bold">Create Merchant Account</button>
-                    </form>
-
-                    <div class="mt-4 pt-3 border-top">
-                        <form action="/admin/monthly-closing/approve" method="POST" onsubmit="return confirm('Execute month-end closing and reset all balances?');">
-                            <button type="submit" class="btn btn-outline-danger w-100 btn-sm">
-                                <i class="bi bi-lock-fill me-1"></i> Approve Monthly Closing & Reset
-                            </button>
+            <!-- Merchant Account Creation -->
+            <div class="col-md-5">
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-white">
+                        <h5 class="mb-0">Create Merchant Account</h5>
+                    </div>
+                    <div class="card-body">
+                        <form action="{{ url_for('add_merchant') }}" method="POST">
+                            <div class="mb-3">
+                                <label class="form-label">Merchant Username</label>
+                                <input type="text" name="username" class="form-control" placeholder="e.g., Cafeteria_Bole" required>
+                            </div>
+                            <button type="submit" class="btn btn-dark w-100">Create Merchant Account</button>
+                        </form>
+                        <hr>
+                        <form action="{{ url_for('approve_monthly_closing') }}" method="POST" onsubmit="return confirm('Are you sure you want to reset all balances to 0?');">
+                            <button type="submit" class="btn btn-outline-danger w-100 btn-sm">Approve Monthly Closing & Reset</button>
                         </form>
                     </div>
                 </div>
@@ -120,11 +117,13 @@
         </div>
 
         <!-- System Accounts Table -->
-        <div class="card-custom p-4">
-            <h5 class="fw-bold mb-3">System Accounts (Employees & Merchants)</h5>
-            <div class="table-responsive">
-                <table class="table table-hover align-middle">
-                    <thead class="table-light">
+        <div class="card shadow-sm">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">System Accounts (Employees & Merchants)</h5>
+            </div>
+            <div class="card-body p-0">
+                <table class="table table-striped mb-0">
+                    <thead>
                         <tr>
                             <th>Username / ID</th>
                             <th>Role</th>
@@ -132,31 +131,27 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {% for u in users %}
+                        for user in users:
                         <tr>
-                            <td class="fw-semibold">{{ u.username }}</td>
-                            <td><span class="badge bg-secondary">{{ u.role }}</span></td>
+                            <td>{{ user.username }}</td>
+                            <td><span class="badge bg-secondary">{{ user.role }}</span></td>
                             <td>
-                                {% if u.role == 'employee' %}
-                                  Active Employee Account
-                                {% elif u.role == 'merchant' %}
-                                  Active Merchant Vendor
-                                {% else %}
-                                  Administrator
-                                {% endif %}
+                                if user.role == 'employee'
+                                    {% set emp = employees|selectattr('emp_id', 'equalto', user.username)|first %}
+                                    {{ emp.balance if emp else '0.0' }} Coupons
+                                else
+                                    Active Account
+                                endif
                             </td>
                         </tr>
-                        {% else %}
-                        <tr>
-                            <td colspan="3" class="text-center text-muted py-3">No accounts registered yet.</td>
-                        </tr>
-                        {% endfor %}
+                        endfor
                     </tbody>
                 </table>
             </div>
         </div>
 
     </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
