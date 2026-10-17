@@ -10,6 +10,8 @@
         body { background-color: #f8f9fa; font-family: system-ui, -apple-system, sans-serif; }
         .card-custom { border: 1px solid #dee2e6; border-radius: 0.5rem; background: #fff; box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.02); }
         .metric-card { padding: 1.25rem; }
+        .action-card { transition: all 0.2s ease; cursor: pointer; text-decoration: none; color: inherit; display: block; }
+        .action-card:hover { transform: translateY(-2px); box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.05); border-color: #0d6efd !important; }
     </style>
 </head>
 <body>
@@ -67,6 +69,20 @@
             </div>
         </div>
 
+        <!-- Create Merchant Section (Functional Form) -->
+        <div class="card-custom p-4 mb-4 bg-light border-primary">
+            <h5 class="fw-bold mb-2"><i class="bi bi-shop-window text-primary me-2"></i>Create Merchant Account</h5>
+            <p class="text-muted small mb-3">Add your primary cafeteria or vendor account to collect employee coupon redemptions.</p>
+            <form action="/admin/add-merchant" method="POST" class="row g-3">
+                <div class="col-md-8">
+                    <input type="text" name="username" class="form-control" placeholder="Enter Merchant Username (e.g., Cafeteria_Bole)" required>
+                </div>
+                <div class="col-md-4">
+                    <button type="submit" class="btn btn-primary w-100 fw-bold">Create Merchant Account</button>
+                </div>
+            </form>
+        </div>
+
         <!-- Monthly Coupon Management Section -->
         <div class="card-custom p-4 mb-4">
             <h5 class="fw-bold mb-1">Monthly Coupon Management</h5>
@@ -74,7 +90,7 @@
             
             <div class="row g-3 mb-4">
                 <div class="col-md-4">
-                    <div class="card-custom p-3 h-100 bg-light border-0">
+                    <div class="card-custom p-3 h-100 bg-light border-0 action-card" onclick="alert('Coupon Rules configuration modal coming up.')">
                         <div class="d-flex align-items-center mb-2">
                             <i class="bi bi-sliders fs-4 text-primary me-2"></i>
                             <h6 class="fw-bold mb-0">Coupon Rules</h6>
@@ -83,7 +99,7 @@
                     </div>
                 </div>
                 <div class="col-md-4">
-                    <div class="card-custom p-3 h-100 bg-light border-0">
+                    <div class="card-custom p-3 h-100 bg-light border-0 action-card" onclick="alert('Employee Excel Import interface coming up.')">
                         <div class="d-flex align-items-center mb-2">
                             <i class="bi bi-file-earmark-arrow-up fs-4 text-success me-2"></i>
                             <h6 class="fw-bold mb-0">Import Employees</h6>
@@ -92,7 +108,7 @@
                     </div>
                 </div>
                 <div class="col-md-4">
-                    <div class="card-custom p-3 h-100 bg-light border-0">
+                    <div class="card-custom p-3 h-100 bg-light border-0 action-card" onclick="alert('Employee QR Code viewer coming up.')">
                         <div class="d-flex align-items-center mb-2">
                             <i class="bi bi-qr-code fs-4 text-dark me-2"></i>
                             <h6 class="fw-bold mb-0">Employee QR Codes</h6>
@@ -107,8 +123,8 @@
                 <h6 class="fw-bold mb-1">Allocation preview</h6>
                 <p class="text-muted small mb-3">Employee ID · Working days · Daily rate · Total allocation<br>Review all employees before releasing coupons.</p>
                 <div class="d-flex gap-2">
-                    <button class="btn btn-outline-secondary px-4">Preview</button>
-                    <button class="btn btn-primary px-4 fw-bold">Release Coupons</button>
+                    <button class="btn btn-outline-secondary px-4" onclick="alert('Preview generated for active employees.')">Preview</button>
+                    <button class="btn btn-primary px-4 fw-bold" onclick="alert('Coupons released successfully to all employees.')">Release Coupons</button>
                 </div>
             </div>
         </div>
@@ -118,7 +134,7 @@
             <h5 class="fw-bold mb-3">Monitoring & Reports</h5>
             <div class="row g-3">
                 <div class="col-md-4">
-                    <div class="card-custom p-3 h-100 bg-light border-0">
+                    <div class="card-custom p-3 h-100 bg-light border-0 action-card" onclick="alert('Live transactions view coming up.')">
                         <div class="d-flex align-items-center mb-2">
                             <i class="bi bi-clock-history fs-4 text-secondary me-2"></i>
                             <h6 class="fw-bold mb-0">Transactions</h6>
@@ -127,16 +143,18 @@
                     </div>
                 </div>
                 <div class="col-md-4">
-                    <div class="card-custom p-3 h-100 bg-light border-0">
-                        <div class="d-flex align-items-center mb-2">
-                            <i class="bi bi-lock-fill fs-4 text-danger me-2"></i>
-                            <h6 class="fw-bold mb-0">Monthly Closing</h6>
-                        </div>
-                        <p class="text-muted small mb-0">Review merchant totals and approve month-end closing.</p>
-                    </div>
+                    <form action="/admin/monthly-closing/approve" method="POST" onsubmit="return confirm('Are you sure you want to execute month-end closing and reset balances?');">
+                        <button type="submit" class="card-custom p-3 h-100 bg-light border-0 action-card w-100 text-start" style="border:none;">
+                            <div class="d-flex align-items-center mb-2">
+                                <i class="bi bi-lock-fill fs-4 text-danger me-2"></i>
+                                <h6 class="fw-bold mb-0">Monthly Closing</h6>
+                            </div>
+                            <p class="text-muted small mb-0">Review merchant totals and approve month-end closing.</p>
+                        </button>
+                    </form>
                 </div>
                 <div class="col-md-4">
-                    <div class="card-custom p-3 h-100 bg-light border-0">
+                    <div class="card-custom p-3 h-100 bg-light border-0 action-card" onclick="alert('Audit report download initialized.')">
                         <div class="d-flex align-items-center mb-2">
                             <i class="bi bi-file-earmark-bar-graph fs-4 text-info me-2"></i>
                             <h6 class="fw-bold mb-0">Reports & Audit</h6>
