@@ -28,7 +28,7 @@ class Employee(db.Model):
     emp_id = db.Column(db.String(50), unique=True, nullable=False)
     name = db.Column(db.String(100), nullable=True)
     department = db.Column(db.String(100), nullable=True)
-    qr_code_id = db.Column(db.String(100), unique=True, nullable=False)  # Permanent QR Seed
+    qr_code_id = db.Column(db.String(100), unique=True, nullable=False)
     balance = db.Column(db.Float, default=0.0)
 
 class Merchant(db.Model):
@@ -42,7 +42,7 @@ class Transaction(db.Model):
     merchant_username = db.Column(db.String(80), nullable=False)
     amount = db.Column(db.Float, nullable=False)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
-    month_period = db.Column(db.String(20), nullable=False)  # e.g. "2026-10"
+    month_period = db.Column(db.String(20), nullable=False)
 
 class MonthlyRule(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -57,7 +57,6 @@ class MonthlyRule(db.Model):
 
 with app.app_context():
     db.create_all()
-    # Ensure default Master Admin account exists
     admin_user = User.query.filter_by(username='admin').first()
     if not admin_user:
         default_admin = User(
@@ -120,4 +119,44 @@ def admin_dashboard():
 
     users = User.query.all()
 
-    return render_template('admin_dashboard.html
+    return render_template('admin_dashboard.html',
+                           emp_count=emp_count,
+                           total_emp_balance=total_emp_balance,
+                           merchant_count=merchant_count,
+                           spent_this_month=spent_this_month,
+                           users=users)
+
+@app.route('/admin/add-merchant', methods=['POST'])
+def add_merchant():
+    if session.get('role') != 'admin':
+        return redirect(url_for('login'))
+
+    if Merchant.query.count() >= 1:
+        flash('System constraint: Only 1 primary merchant account is permitted.', 'danger')
+        return redirect(url_for('admin_dashboard'))
+
+    username = request.form.get('username', '').strip()
+    if not username:
+        flash('Merchant username cannot be empty.', 'warning')
+        return redirect(url_for('admin_dashboard'))
+
+    if User.query.filter_by(username=username).first():
+        flash('Username already exists.', 'warning')
+        return redirect(url_for('admin_dashboard'))
+
+    new_user = User(
+        username=username,
+        password_hash=generate_password_hash('welcome123'),
+        role='merchant'
+    )
+    new_merchant = Merchant(username=username)
+
+    db.session.add(new_user)
+    db.session.add(new_merchant)
+    db.session.commit()
+
+    flash(f'Merchant account "{username}" created successfully.', 'success')
+    return redirect(url_for('admin_dashboard'))
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000, debug=True)
