@@ -187,12 +187,17 @@ def upload_employees():
     if request.method == 'GET':
         return redirect(url_for('admin_dashboard'))
 
-    file = request.files.get('file')
-    if not file or not file.filename.endswith('.xlsx'):
-        flash('Please upload a valid Excel (.xlsx) file.', 'danger')
-        return redirect(url_for('admin_dashboard'))
-
     try:
+        # Support both 'file' and 'excel_file' form names
+        file = request.files.get('file') or request.files.get('excel_file')
+        if not file or file.filename == '':
+            flash('Please select a valid Excel file to upload.', 'danger')
+            return redirect(url_for('admin_dashboard'))
+
+        if not file.filename.endswith('.xlsx'):
+            flash('Please upload a valid Excel (.xlsx) file.', 'danger')
+            return redirect(url_for('admin_dashboard'))
+
         current_month = datetime.now().strftime("%Y-%m")
         working_days = 20
         try:
