@@ -36,6 +36,12 @@ class Merchant(db.Model):
     username = db.Column(db.String(80), unique=True, nullable=False)
     collected_balance = db.Column(db.Float, default=0.0)
 
+class MonthlyRule(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    month_period = db.Column(db.String(20), unique=True, nullable=False)
+    working_days = db.Column(db.Integer, nullable=False, default=20)
+    daily_rate = db.Column(db.Float, nullable=False, default=1.0)
+
 class Transaction(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     emp_id = db.Column(db.String(50), nullable=False)
@@ -70,14 +76,12 @@ def login():
     if request.method == 'POST':
         username = request.form.get('username', '').strip()
         password = request.form.get('password', '').strip()
-
         user = User.query.filter_by(username=username).first()
 
         if user and check_password_hash(user.password_hash, password):
             session['user_id'] = user.id
             session['username'] = user.username
             session['role'] = user.role
-
             if user.role == 'admin':
                 return redirect(url_for('admin_dashboard'))
             elif user.role == 'merchant':
@@ -85,14 +89,14 @@ def login():
             elif user.role == 'employee':
                 return redirect(url_for('employee_dashboard'))
         else:
-            flash('Invalid username or password. Please try again.', 'danger')
+            flash('Invalid username or password.', 'danger')
 
     return render_template('login.html')
 
 @app.route('/logout')
 def logout():
     session.clear()
-    flash('You have been logged out successfully.', 'info')
+    flash('Logged out successfully.', 'info')
     return redirect(url_for('login'))
 
 @app.route('/admin/dashboard', methods=['GET'])
@@ -109,6 +113,10 @@ def admin_dashboard():
         Transaction.month_period == current_month
     ).scalar() or 0.0
 
+    current_rule = MonthlyRule.query.filter_by(month_period=current_month).first()
+    if not current_rule:
+        current_rule = MonthlyRule(month_period=current_month, working_days=20, daily_rate=1.0)
+
     users = User.query.all()
     employees = Employee.query.all()
 
@@ -117,8 +125,29 @@ def admin_dashboard():
                            total_emp_balance=total_emp_balance,
                            merchant_count=merchant_count,
                            spent_this_month=spent_this_month,
+                           current_rule=current_rule,
+                           current_month=current_month,
                            users=users,
                            employees=employees)
+
+@app.route('/admin/set-rule', methods=['POST'])
+def set_rule():
+    if session.get('role') != 'admin':
+        return redirect(url_for('login'))
+
+    month_period = request.form.get('month_period', datetime.now().strftime("%Y-%m"))
+    working_days = int(request.form.get('working_days', 20))
+
+    rule = MonthlyRule.query.filter_by(month_period=month_period).first()
+    if not rule:
+        rule = MonthlyRule(month_period=month_period, working_days=working_days)
+        db.session.add(rule)
+    else:
+        rule.working_days = working_days
+
+    db.session.commit()
+    flash(f'Working days set to {working_days} for {month_period}.', 'success')
+    return redirect(url_for('admin_dashboard'))
 
 @app.route('/admin/add-merchant', methods=['POST'])
 def add_merchant():
@@ -130,26 +159,14 @@ def add_merchant():
         return redirect(url_for('admin_dashboard'))
 
     username = request.form.get('username', '').strip()
-    if not username:
-        flash('Merchant username cannot be empty.', 'warning')
+    if not username or User.query.filter_by(username=username).first():
+        flash('Invalid or existing username.', 'warning')
         return redirect(url_for('admin_dashboard'))
 
-    if User.query.filter_by(username=username).first():
-        flash('Username already exists.', 'warning')
-        return redirect(url_for('admin_dashboard'))
-
-    new_user = User(
-        username=username,
-        password_hash=generate_password_hash('welcome123'),
-        role='merchant'
-    )
-    new_merchant = Merchant(username=username)
-
-    db.session.add(new_user)
-    db.session.add(new_merchant)
+    db.session.add(User(username=username, password_hash=generate_password_hash('welcome123'), role='merchant'))
+    db.session.add(Merchant(username=username))
     db.session.commit()
-
-    flash(f'Merchant account "{username}" created successfully.', 'success')
+    flash(f'Merchant "{username}" created.', 'success')
     return redirect(url_for('admin_dashboard'))
 
 @app.route('/admin/upload-employees', methods=['POST'])
@@ -163,69 +180,49 @@ def upload_employees():
         return redirect(url_for('admin_dashboard'))
 
     try:
+        current_month = datetime.now().strftime("%Y-%m")
+        rule = MonthlyRule.query.filter_by(month_period=current_month).first()
+        working_days = rule.working_days if rule else 20
+
         wb = openpyxl.load_workbook(file)
         sheet = wb.active
         count = 0
         
-        # Assumes format: Emp ID | Name | Department | Monthly Allocation Amount
+        # Mapping based on your spreadsheet layout:
+        # Col A (0): Name, Col B (1): Subcity, Col C (2): Pool, Col D (3): Sector, Col E (4): ID, Col F (5): Password
         for row in sheet.iter_rows(min_row=2, values_only=True):
-            if not row[0]:
+            if not row or len(row) < 5 or not row[4]:
                 continue
-            emp_id = str(row[0]).strip()
-            name = str(row[1]) if len(row) > 1 and row[1] else "Employee"
-            dept = str(row[2]) if len(row) > 2 and row[2] else "General"
-            allocation = float(row[3]) if len(row) > 3 and row[3] else 1000.0
+            
+            name = str(row[0]).strip() if row[0] else "Employee"
+            sector = str(row[3]).strip() if len(row) > 3 and row[3] else "General"
+            emp_id = str(row[4]).strip()
+            excel_password = str(row[5]).strip() if len(row) > 5 and row[5] else "emp123"
+
+            allocation = float(working_days)
 
             emp = Employee.query.filter_by(emp_id=emp_id).first()
             if not emp:
                 qr_seed = str(uuid.uuid4())
-                emp = Employee(emp_id=emp_id, name=name, department=dept, qr_code_id=qr_seed, balance=allocation)
+                emp = Employee(emp_id=emp_id, name=name, department=sector, qr_code_id=qr_seed, balance=allocation)
                 db.session.add(emp)
-                
-                # Create user login for employee
-                if not User.query.filter_by(username=emp_id).first():
-                    u = User(username=emp_id, password_hash=generate_password_hash('emp123'), role='employee')
-                    db.session.add(u)
             else:
                 emp.balance += allocation
+
+            # Create or update user login using ID and Excel password
+            user_account = User.query.filter_by(username=emp_id).first()
+            if not user_account:
+                u = User(username=emp_id, password_hash=generate_password_hash(excel_password), role='employee')
+                db.session.add(u)
 
             count += 1
 
         db.session.commit()
-        flash(f'Successfully processed {count} employee allocations from Excel!', 'success')
+        flash(f'Successfully imported {count} employees and allocated {working_days} coupons each!', 'success')
     except Exception as e:
         db.session.rollback()
         flash(f'Error processing Excel file: {str(e)}', 'danger')
 
-    return redirect(url_for('admin_dashboard'))
-
-@app.route('/admin/release-single', methods=['POST'])
-def release_single():
-    if session.get('role') != 'admin':
-        return redirect(url_for('login'))
-
-    emp_id = request.form.get('emp_id', '').strip()
-    name = request.form.get('name', '').strip()
-    amount = float(request.form.get('amount', 500.0))
-
-    if not emp_id:
-        flash('Employee ID is required.', 'warning')
-        return redirect(url_for('admin_dashboard'))
-
-    emp = Employee.query.filter_by(emp_id=emp_id).first()
-    if not emp:
-        qr_seed = str(uuid.uuid4())
-        emp = Employee(emp_id=emp_id, name=name or 'Employee', qr_code_id=qr_seed, balance=amount)
-        db.session.add(emp)
-        
-        if not User.query.filter_by(username=emp_id).first():
-            u = User(username=emp_id, password_hash=generate_password_hash('emp123'), role='employee')
-            db.session.add(u)
-    else:
-        emp.balance += amount
-
-    db.session.commit()
-    flash(f'Released {amount} coupon balance to employee {emp_id} successfully.', 'success')
     return redirect(url_for('admin_dashboard'))
 
 @app.route('/admin/monthly-closing/approve', methods=['POST'])
@@ -238,9 +235,8 @@ def approve_monthly_closing():
             m.collected_balance = 0.0
         for e in Employee.query.all():
             e.balance = 0.0
-
         db.session.commit()
-        flash('Monthly closing approved successfully. All balances reset to 0.', 'success')
+        flash('Monthly closing executed successfully. All balances reset to 0.', 'success')
     except Exception as e:
         db.session.rollback()
         flash('Failed to execute monthly closing.', 'danger')
