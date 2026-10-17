@@ -179,10 +179,13 @@ def add_merchant():
     flash(f'Merchant "{username}" created.', 'success')
     return redirect(url_for('admin_dashboard'))
 
-@app.route('/admin/upload-employees', methods=['POST'])
+@app.route('/admin/upload-employees', methods=['GET', 'POST'])
 def upload_employees():
     if session.get('role') != 'admin':
         return redirect(url_for('login'))
+
+    if request.method == 'GET':
+        return redirect(url_for('admin_dashboard'))
 
     file = request.files.get('file')
     if not file or not file.filename.endswith('.xlsx'):
