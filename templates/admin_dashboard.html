@@ -1,0 +1,41 @@
+<!-- Monthly Coupon Distribution Section -->
+<div class="row g-4 mb-5">
+    <!-- Option A: Bulk Release via Excel Upload -->
+    <div class="col-md-6">
+        <div class="card shadow-sm h-100 border-primary">
+            <div class="card-body">
+                <h4 class="card-title text-primary mb-3">Bulk Monthly Release (Excel)</h4>
+                <p class="text-muted">Upload an `.xlsx` file to release monthly coupons for all employees at once and auto-register accounts.</p>
+                <form method="POST" action="/admin/dashboard" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label class="form-label font-weight-bold">Select Employee Excel File</label>
+                        <input type="file" name="file" class="form-control" accept=".xlsx" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">Release & Generate All Coupons</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Option B: Single Employee Release -->
+    <div class="col-md-6">
+        <div class="card shadow-sm h-100 border-success">
+            <div class="card-body">
+                <h4 class="card-title text-success mb-3">Single Coupon Release</h4>
+                <p class="text-muted">Manually release a monthly coupon for an individual employee or new hire.</p>
+                <form method="POST" action="/admin/release-coupon/single">
+                    <div class="mb-2">
+                        <input type="text" name="emp_id" class="form-control" placeholder="Employee ID (e.g., EMP-101)" required>
+                    </div>
+                    <div class="mb-2">
+                        <input type="text" name="emp_name" class="form-control" placeholder="Employee Name (Optional / Amharic)">
+                    </div>
+                    <div class="mb-3">
+                        <input type="text" name="department" class="form-control" placeholder="Department (Optional)">
+                    </div>
+                    <button type="submit" class="btn btn-success w-100">Release & Print Single Coupon</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
