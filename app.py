@@ -21,7 +21,7 @@ class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
     password_hash = db.Column(db.String(200), nullable=False)
-    role = db.Column(db.String(20), nullable=False)  # 'admin', 'employee', 'merchant'
+    role = db.Column(db.String(20), nullable=False)
 
 class Employee(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -113,9 +113,12 @@ def admin_dashboard():
         Transaction.month_period == current_month
     ).scalar() or 0.0
 
-    current_rule = MonthlyRule.query.filter_by(month_period=current_month).first()
-    if not current_rule:
-        current_rule = MonthlyRule(month_period=current_month, working_days=20, daily_rate=1.0)
+    try:
+        current_rule = MonthlyRule.query.filter_by(month_period=current_month).first()
+        if not current_rule:
+            current_rule = MonthlyRule(month_period=current_month, working_days=20)
+    except Exception:
+        current_rule = MonthlyRule(month_period=current_month, working_days=20)
 
     users = User.query.all()
     employees = Employee.query.all()
@@ -136,17 +139,24 @@ def set_rule():
         return redirect(url_for('login'))
 
     month_period = request.form.get('month_period', datetime.now().strftime("%Y-%m"))
-    working_days = int(request.form.get('working_days', 20))
+    try:
+        working_days = int(request.form.get('working_days', 20))
+    except ValueError:
+        working_days = 20
 
-    rule = MonthlyRule.query.filter_by(month_period=month_period).first()
-    if not rule:
-        rule = MonthlyRule(month_period=month_period, working_days=working_days)
-        db.session.add(rule)
-    else:
-        rule.working_days = working_days
+    try:
+        rule = MonthlyRule.query.filter_by(month_period=month_period).first()
+        if not rule:
+            rule = MonthlyRule(month_period=month_period, working_days=working_days)
+            db.session.add(rule)
+        else:
+            rule.working_days = working_days
+        db.session.commit()
+        flash(f'Working days set to {working_days} for {month_period}.', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error saving rule: {str(e)}', 'danger')
 
-    db.session.commit()
-    flash(f'Working days set to {working_days} for {month_period}.', 'success')
     return redirect(url_for('admin_dashboard'))
 
 @app.route('/admin/add-merchant', methods=['POST'])
@@ -181,15 +191,18 @@ def upload_employees():
 
     try:
         current_month = datetime.now().strftime("%Y-%m")
-        rule = MonthlyRule.query.filter_by(month_period=current_month).first()
-        working_days = rule.working_days if rule else 20
+        working_days = 20
+        try:
+            rule = MonthlyRule.query.filter_by(month_period=current_month).first()
+            if rule:
+                working_days = rule.working_days
+        except Exception:
+            working_days = 20
 
         wb = openpyxl.load_workbook(file)
         sheet = wb.active
         count = 0
         
-        # Mapping based on your spreadsheet layout:
-        # Col A (0): Name, Col B (1): Subcity, Col C (2): Pool, Col D (3): Sector, Col E (4): ID, Col F (5): Password
         for row in sheet.iter_rows(min_row=2, values_only=True):
             if not row or len(row) < 5 or not row[4]:
                 continue
@@ -209,7 +222,6 @@ def upload_employees():
             else:
                 emp.balance += allocation
 
-            # Create or update user login using ID and Excel password
             user_account = User.query.filter_by(username=emp_id).first()
             if not user_account:
                 u = User(username=emp_id, password_hash=generate_password_hash(excel_password), role='employee')
