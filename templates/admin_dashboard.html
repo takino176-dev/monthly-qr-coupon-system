@@ -3,73 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Master Control Center</title>
+    <title>Admin Master Dashboard</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <style>
+        body { background-color: #f8f9fa; font-family: system-ui, -apple-system, sans-serif; }
+        .card-custom { border: 1px solid #dee2e6; border-radius: 0.5rem; background: #fff; box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.02); }
+        .metric-card { padding: 1.25rem; }
+    </style>
 </head>
-<body class="bg-light">
-    <div class="container py-4">
+<body>
+    <div class="container py-4" style="max-width: 1200px;">
         
-        <!-- Top Header & Language Toggle -->
+        <!-- Header & Language Switcher -->
         <div class="d-flex justify-content-between align-items-center mb-4">
-            <div>
-                <h2 class="fw-bold text-dark mb-0">Admin Master Dashboard</h2>
-                <small class="text-muted">Centralized Control & Coupon Management</small>
-            </div>
-            <div class="d-flex align-items-center">
-                <div class="btn-group me-3" role="group">
-                    <button type="button" class="btn btn-sm btn-outline-dark active">EN</button>
-                    <button type="button" class="btn btn-sm btn-outline-dark">አማርኛ</button>
+            <h3 class="fw-bold text-dark mb-0">Admin Master Dashboard</h3>
+            <div class="d-flex align-items-center gap-3">
+                <div class="btn-group btn-group-sm" role="group">
+                    <button type="button" class="btn btn-outline-dark active">EN</button>
+                    <button type="button" class="btn btn-outline-dark">አማ</button>
                 </div>
                 <a href="/logout" class="btn btn-outline-danger btn-sm">Logout</a>
-            </div>
-        </div>
-
-        <!-- Metric KPI Cards -->
-        <div class="row g-3 mb-4">
-            <div class="col-md-3">
-                <div class="card shadow-sm border-0 p-3">
-                    <div class="d-flex align-items-center">
-                        <i class="bi bi-people fs-1 text-primary me-3"></i>
-                        <div>
-                            <h3 class="fw-bold mb-0">{{ emp_count }}</h3>
-                            <span class="text-muted small">Registered Employees</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card shadow-sm border-0 p-3">
-                    <div class="d-flex align-items-center">
-                        <i class="bi bi-wallet2 fs-1 text-success me-3"></i>
-                        <div>
-                            <h3 class="fw-bold mb-0">{{ "%.2f"|format(total_emp_balance) }}</h3>
-                            <span class="text-muted small">Employee Coupon Balance</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card shadow-sm border-0 p-3">
-                    <div class="d-flex align-items-center">
-                        <i class="bi bi-shop fs-1 text-info me-3"></i>
-                        <div>
-                            <h3 class="fw-bold mb-0">{{ merchant_count }} / 1</h3>
-                            <span class="text-muted small">Merchant Account</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card shadow-sm border-0 p-3">
-                    <div class="d-flex align-items-center">
-                        <i class="bi bi-receipt fs-1 text-warning me-3"></i>
-                        <div>
-                            <h3 class="fw-bold mb-0">{{ "%.2f"|format(spent_this_month) }}</h3>
-                            <span class="text-muted small">Spent This Month</span>
-                        </div>
-                    </div>
-                </div>
             </div>
         </div>
 
@@ -79,94 +33,121 @@
             {% for category, message in messages %}
               <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
                 {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
               </div>
             {% endfor %}
           {% endif %}
         {% endwith %}
 
-        <!-- Monthly Coupon Rules & Allocations -->
-        <div class="card shadow-sm border-0 mb-4">
-            <div class="card-header bg-white fw-bold py-3">
-                <i class="bi bi-sliders me-2"></i> Monthly Coupon Management
-            </div>
-            <div class="card-body">
-                <div class="row g-3 mb-3">
-                    <div class="col-md-4">
-                        <label class="form-label fw-bold">1. Select Working Days & Daily Rate</label>
-                        <div class="input-group mb-2">
-                            <span class="input-group-text">Days</span>
-                            <input type="number" class="form-control" value="22" id="workingDays">
-                            <span class="input-group-text">Rate</span>
-                            <input type="number" class="form-control" value="100" id="dailyRate">
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <label class="form-label fw-bold">2. Import Employee Excel</label>
-                        <input type="file" class="form-control" accept=".xlsx">
-                    </div>
-                    <div class="col-md-4">
-                        <label class="form-label fw-bold">3. Permanent QR Codes</label>
-                        <a href="/admin/generate-qrs" class="btn btn-outline-secondary w-100"><i class="bi bi-qr-code me-1"></i> Manage Permanent QRs</a>
-                    </div>
+        <!-- Top Metric Cards Row -->
+        <div class="row g-3 mb-4">
+            <div class="col-md-3">
+                <div class="card-custom metric-card h-100">
+                    <div class="text-muted mb-1"><i class="bi bi-people fs-5 me-1"></i> Registered employees</div>
+                    <h3 class="fw-bold mb-0">{{ emp_count }}</h3>
                 </div>
-                
-                <!-- Allocation Preview & Release -->
-                <div class="p-3 bg-light rounded border">
-                    <h6 class="fw-bold mb-1">Allocation Preview</h6>
-                    <p class="text-muted small mb-3">Review total calculated allocation before releasing to all 500+ employees.</p>
-                    <div class="d-flex gap-2">
-                        <button class="btn btn-outline-primary"><i class="bi bi-eye me-1"></i> Preview Allocations</button>
-                        <button class="btn btn-primary fw-bold"><i class="bi bi-check-circle me-1"></i> Release Monthly Coupons</button>
-                    </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card-custom metric-card h-100">
+                    <div class="text-muted mb-1"><i class="bi bi-wallet2 fs-5 me-1"></i> Employee coupon balance total</div>
+                    <h3 class="fw-bold mb-0">{{ "%.2f"|format(total_emp_balance) }}</h3>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card-custom metric-card h-100">
+                    <div class="text-muted mb-1"><i class="bi bi-shop fs-5 me-1"></i> Merchant account</div>
+                    <h3 class="fw-bold mb-0">{{ merchant_count }}</h3>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card-custom metric-card h-100">
+                    <div class="text-muted mb-1"><i class="bi bi-receipt fs-5 me-1"></i> Spent this month</div>
+                    <h3 class="fw-bold mb-0">{{ "%.2f"|format(spent_this_month) }}</h3>
                 </div>
             </div>
         </div>
 
-        <!-- Operations & Management Row -->
-        <div class="row g-4 mb-4">
-            <!-- Create Single Merchant -->
-            <div class="col-md-6">
-                <div class="card shadow-sm border-0 h-100">
-                    <div class="card-header bg-white fw-bold py-3">
-                        <i class="bi bi-shop me-2"></i> Merchant Configuration
-                    </div>
-                    <div class="card-body">
-                        {% if merchant_count < 1 %}
-                        <form method="POST" action="/admin/add-merchant">
-                            <div class="mb-3">
-                                <label class="form-label fw-bold">Primary Merchant Account Name</label>
-                                <input type="text" name="username" class="form-control" placeholder="e.g. Central_Cafeteria" required>
-                            </div>
-                            <button type="submit" class="btn btn-info text-white w-100 fw-bold">Create Primary Merchant</button>
-                        </form>
-                        {% else %}
-                        <div class="alert alert-success mb-0">
-                            <i class="bi bi-check-circle-fill me-2"></i> Primary Merchant account is configured and active.
+        <!-- Monthly Coupon Management Section -->
+        <div class="card-custom p-4 mb-4">
+            <h5 class="fw-bold mb-1">Monthly Coupon Management</h5>
+            <p class="text-muted small mb-3">Select month · Set working days · Set daily coupon rate</p>
+            
+            <div class="row g-3 mb-4">
+                <div class="col-md-4">
+                    <div class="card-custom p-3 h-100 bg-light border-0">
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="bi bi-sliders fs-4 text-primary me-2"></i>
+                            <h6 class="fw-bold mb-0">Coupon Rules</h6>
                         </div>
-                        {% endif %}
+                        <p class="text-muted small mb-0">Configure active month, working days, and daily rates.</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card-custom p-3 h-100 bg-light border-0">
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="bi bi-file-earmark-arrow-up fs-4 text-success me-2"></i>
+                            <h6 class="fw-bold mb-0">Import Employees</h6>
+                        </div>
+                        <p class="text-muted small mb-0">Upload employee `.xlsx` file for bulk allocation.</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card-custom p-3 h-100 bg-light border-0">
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="bi bi-qr-code fs-4 text-dark me-2"></i>
+                            <h6 class="fw-bold mb-0">Employee QR Codes</h6>
+                        </div>
+                        <p class="text-muted small mb-0">Manage permanent QR codes mapped to employee IDs.</p>
                     </div>
                 </div>
             </div>
 
-            <!-- Monitoring & Monthly Closing -->
-            <div class="col-md-6">
-                <div class="card shadow-sm border-0 h-100">
-                    <div class="card-header bg-white fw-bold py-3">
-                        <i class="bi bi-journal-check me-2"></i> Monitoring & Monthly Closing
-                    </div>
-                    <div class="card-body d-flex flex-column justify-content-between">
-                        <p class="text-muted small">Review transactions, generate monthly summary audits, and execute official month-end balance resets.</p>
-                        <div class="d-flex gap-2">
-                            <a href="/admin/reports" class="btn btn-outline-secondary w-50"><i class="bi bi-file-earmark-bar-graph me-1"></i> Audit Reports</a>
-                            <form action="/admin/monthly-closing/approve" method="POST" class="w-50" onsubmit="return confirm('Approve monthly closing? This will reset merchant balances and expire unspent coupons while preserving transaction history.');">
-                                <button type="submit" class="btn btn-danger w-100 fw-bold"><i class="bi bi-lock me-1"></i> Approve Closing</button>
-                            </form>
+            <!-- Allocation Preview Box -->
+            <div class="card-custom p-4 bg-white border">
+                <h6 class="fw-bold mb-1">Allocation preview</h6>
+                <p class="text-muted small mb-3">Employee ID · Working days · Daily rate · Total allocation<br>Review all employees before releasing coupons.</p>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-outline-secondary px-4">Preview</button>
+                    <button class="btn btn-primary px-4 fw-bold">Release Coupons</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Monitoring & Reports Section -->
+        <div class="card-custom p-4">
+            <h5 class="fw-bold mb-3">Monitoring & Reports</h5>
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <div class="card-custom p-3 h-100 bg-light border-0">
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="bi bi-clock-history fs-4 text-secondary me-2"></i>
+                            <h6 class="fw-bold mb-0">Transactions</h6>
                         </div>
+                        <p class="text-muted small mb-0">View live redemptions and purchase history.</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card-custom p-3 h-100 bg-light border-0">
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="bi bi-lock-fill fs-4 text-danger me-2"></i>
+                            <h6 class="fw-bold mb-0">Monthly Closing</h6>
+                        </div>
+                        <p class="text-muted small mb-0">Review merchant totals and approve month-end closing.</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card-custom p-3 h-100 bg-light border-0">
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="bi bi-file-earmark-bar-graph fs-4 text-info me-2"></i>
+                            <h6 class="fw-bold mb-0">Reports & Audit</h6>
+                        </div>
+                        <p class="text-muted small mb-0">Generate downloadable audit logs and summaries.</p>
                     </div>
                 </div>
             </div>
         </div>
 
     </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
