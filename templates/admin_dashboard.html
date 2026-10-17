@@ -2,157 +2,68 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard - Kolfe Employee Coupon System</title>
+    <title>Admin Dashboard</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body class="bg-light">
-
-    <nav class="navbar navbar-dark bg-dark shadow-sm">
-        <div class="container-fluid">
-            <span class="navbar-brand mb-0 h1">Admin Master Control Center</span>
-            <a href="{{ url_for('logout') }}" class="btn btn-outline-light btn-sm">Logout</a>
-        </div>
+    <nav class="navbar navbar-dark bg-dark px-4">
+        <span class="navbar-brand">Admin Dashboard</span>
+        <a href="{{ url_for('logout') }}" class="btn btn-outline-light btn-sm">Logout</a>
     </nav>
 
     <div class="container my-4">
-
-        <!-- Flash Messages -->
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
-                {% for category, message in messages %}
-                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-                        {{ message }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                {% for cat, msg in messages %}
+                    <div class="alert alert-{{ cat }} alert-dismissible fade show" role="alert">
+                        {{ msg }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                     </div>
                 {% endfor %}
             {% endif %}
         {% endwith %}
 
-        <!-- Top Metrics Cards -->
-        <div class="row text-center mb-4">
-            <div class="col-md-3">
-                <div class="card shadow-sm p-3">
-                    <h6 class="text-muted">Registered Employees</h6>
-                    <h3>{{ emp_count }}</h3>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card shadow-sm p-3">
-                    <h6 class="text-muted">Total Balance</h6>
-                    <h3>{{ "%.2f"|format(total_emp_balance) }}</h3>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card shadow-sm p-3">
-                    <h6 class="text-muted">Merchants</h6>
-                    <h3>{{ merchant_count }}</h3>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card shadow-sm p-3">
-                    <h6 class="text-muted">Spent This Month</h6>
-                    <h3>{{ "%.2f"|format(spent_this_month) }}</h3>
-                </div>
-            </div>
+        <div class="row g-3 mb-4">
+            <div class="col-md-3"><div class="card p-3 shadow-sm"><h6>Employees</h6><h3>{{ emp_count }}</h3></div></div>
+            <div class="col-md-3"><div class="card p-3 shadow-sm"><h6>Total Balance</h6><h3>{{ "%.2f"|format(total_emp_balance) }}</h3></div></div>
+            <div class="col-md-3"><div class="card p-3 shadow-sm"><h6>Merchants</h6><h3>{{ merchant_count }}</h3></div></div>
+            <div class="col-md-3"><div class="card p-3 shadow-sm"><h6>Spent This Month</h6><h3>{{ "%.2f"|format(spent_this_month) }}</h3></div></div>
         </div>
 
         <div class="row">
-            <!-- Monthly Rule & Bulk Upload Section -->
             <div class="col-md-7">
-                <div class="card shadow-sm mb-4">
-                    <div class="card-header bg-white">
-                        <h5 class="mb-0">Set Monthly Coupon Rules</h5>
-                    </div>
-                    <div class="card-body">
-                        <form action="{{ url_for('set_rule') }}" method="POST">
-                            <div class="mb-3">
-                                <label class="form-label">Month Period</label>
-                                <input type="text" name="month_period" class="form-control" value="{{ current_month }}" readonly>
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label">Working Days (Default Coupon Allocation)</label>
-                                <input type="number" name="working_days" class="form-control" value="{{ current_rule.working_days }}" required>
-                            </div>
-                            <button type="submit" class="btn btn-success">Save Monthly Rule</button>
-                        </form>
-                    </div>
+                <div class="card shadow-sm mb-4 p-3">
+                    <h5>Set Working Days</h5>
+                    <form action="{{ url_for('set_rule') }}" method="POST">
+                        <input type="hidden" name="month_period" value="{{ current_month }}">
+                        <div class="mb-3">
+                            <label class="form-label">Working Days</label>
+                            <input type="number" name="working_days" class="form-control" value="{{ current_rule.working_days }}" required>
+                        </div>
+                        <button type="submit" class="btn btn-success">Save Rule</button>
+                    </form>
                 </div>
 
-                <div class="card shadow-sm mb-4">
-                    <div class="card-header bg-white">
-                        <h5 class="mb-0">Bulk Monthly Release (Excel .xlsx)</h5>
-                    </div>
-                    <div class="card-body">
-                        <form action="{{ url_for('upload_employees') }}" method="POST" enctype="multipart/form-data">
-                            <div class="input-group mb-3">
-                                <input type="file" name="file" class="form-control" required accept=".xlsx">
-                                <button type="submit" class="btn btn-primary">Release All</button>
-                            </div>
-                        </form>
-                    </div>
+                <div class="card shadow-sm mb-4 p-3">
+                    <h5>Bulk Employee Release (.xlsx)</h5>
+                    <form action="{{ url_for('upload_employees') }}" method="POST" enctype="multipart/form-data">
+                        <div class="input-group">
+                            <input type="file" name="file" class="form-control" required accept=".xlsx">
+                            <button type="submit" class="btn btn-primary">Release All</button>
+                        </div>
+                    </form>
                 </div>
             </div>
 
-            <!-- Merchant Account Creation -->
             <div class="col-md-5">
-                <div class="card shadow-sm mb-4">
-                    <div class="card-header bg-white">
-                        <h5 class="mb-0">Create Merchant Account</h5>
-                    </div>
-                    <div class="card-body">
-                        <form action="{{ url_for('add_merchant') }}" method="POST">
-                            <div class="mb-3">
-                                <label class="form-label">Merchant Username</label>
-                                <input type="text" name="username" class="form-control" placeholder="e.g., Cafeteria_Bole" required>
-                            </div>
-                            <button type="submit" class="btn btn-dark w-100">Create Merchant Account</button>
-                        </form>
-                        <hr>
-                        <form action="{{ url_for('approve_monthly_closing') }}" method="POST" onsubmit="return confirm('Are you sure you want to reset all balances to 0?');">
-                            <button type="submit" class="btn btn-outline-danger w-100 btn-sm">Approve Monthly Closing & Reset</button>
-                        </form>
-                    </div>
+                <div class="card shadow-sm p-3">
+                    <h5>Monthly Closing</h5>
+                    <form action="{{ url_for('approve_monthly_closing') }}" method="POST" onsubmit="return confirm('Reset all balances?');">
+                        <button type="submit" class="btn btn-outline-danger w-100">Reset All Balances to 0</button>
+                    </form>
                 </div>
             </div>
         </div>
-
-        <!-- System Accounts Table -->
-        <div class="card shadow-sm">
-            <div class="card-header bg-white">
-                <h5 class="mb-0">System Accounts (Employees & Merchants)</h5>
-            </div>
-            <div class="card-body p-0">
-                <table class="table table-striped mb-0">
-                    <thead>
-                        <tr>
-                            <th>Username / ID</th>
-                            <th>Role</th>
-                            <th>Balance / Status</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for user in users %}
-                        <tr>
-                            <td>{{ user.username }}</td>
-                            <td><span class="badge bg-secondary">{{ user.role }}</span></td>
-                            <td>
-                                {% if user.role == 'employee' %}
-                                    {% set emp = employees|selectattr('emp_id', 'equalto', user.username)|first %}
-                                    {{ emp.balance if emp else '0.0' }} Coupons
-                                {% else %}
-                                    Active Account
-                                {% endif %}
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
     </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
