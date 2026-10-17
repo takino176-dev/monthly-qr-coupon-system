@@ -4,6 +4,7 @@ from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 import openpyxl
 from datetime import datetime
+import uuid
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'kolfe-secret-key-2026'
@@ -21,7 +22,6 @@ class User(db.Model):
     username = db.Column(db.String(80), unique=True, nullable=False)
     password_hash = db.Column(db.String(200), nullable=False)
     role = db.Column(db.String(20), nullable=False)  # 'admin', 'employee', 'merchant'
-    is_initial_password = db.Column(db.Boolean, default=True)
 
 class Employee(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -44,13 +44,6 @@ class Transaction(db.Model):
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
     month_period = db.Column(db.String(20), nullable=False)
 
-class MonthlyRule(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    month_period = db.Column(db.String(20), unique=True, nullable=False)
-    working_days = db.Column(db.Integer, nullable=False)
-    daily_rate = db.Column(db.Float, nullable=False)
-    is_closed = db.Column(db.Boolean, default=False)
-
 # ---------------------------------------------------------------------------
 # Database Initialization & Admin Setup
 # ---------------------------------------------------------------------------
@@ -62,8 +55,7 @@ with app.app_context():
         default_admin = User(
             username='admin',
             password_hash=generate_password_hash('admin123'),
-            role='admin',
-            is_initial_password=False
+            role='admin'
         )
         db.session.add(default_admin)
         db.session.commit()
@@ -118,13 +110,15 @@ def admin_dashboard():
     ).scalar() or 0.0
 
     users = User.query.all()
+    employees = Employee.query.all()
 
     return render_template('admin_dashboard.html',
                            emp_count=emp_count,
                            total_emp_balance=total_emp_balance,
                            merchant_count=merchant_count,
                            spent_this_month=spent_this_month,
-                           users=users)
+                           users=users,
+                           employees=employees)
 
 @app.route('/admin/add-merchant', methods=['POST'])
 def add_merchant():
@@ -156,6 +150,101 @@ def add_merchant():
     db.session.commit()
 
     flash(f'Merchant account "{username}" created successfully.', 'success')
+    return redirect(url_for('admin_dashboard'))
+
+@app.route('/admin/upload-employees', methods=['POST'])
+def upload_employees():
+    if session.get('role') != 'admin':
+        return redirect(url_for('login'))
+
+    file = request.files.get('file')
+    if not file or not file.filename.endswith('.xlsx'):
+        flash('Please upload a valid Excel (.xlsx) file.', 'danger')
+        return redirect(url_for('admin_dashboard'))
+
+    try:
+        wb = openpyxl.load_workbook(file)
+        sheet = wb.active
+        count = 0
+        
+        # Assumes format: Emp ID | Name | Department | Monthly Allocation Amount
+        for row in sheet.iter_rows(min_row=2, values_only=True):
+            if not row[0]:
+                continue
+            emp_id = str(row[0]).strip()
+            name = str(row[1]) if len(row) > 1 and row[1] else "Employee"
+            dept = str(row[2]) if len(row) > 2 and row[2] else "General"
+            allocation = float(row[3]) if len(row) > 3 and row[3] else 1000.0
+
+            emp = Employee.query.filter_by(emp_id=emp_id).first()
+            if not emp:
+                qr_seed = str(uuid.uuid4())
+                emp = Employee(emp_id=emp_id, name=name, department=dept, qr_code_id=qr_seed, balance=allocation)
+                db.session.add(emp)
+                
+                # Create user login for employee
+                if not User.query.filter_by(username=emp_id).first():
+                    u = User(username=emp_id, password_hash=generate_password_hash('emp123'), role='employee')
+                    db.session.add(u)
+            else:
+                emp.balance += allocation
+
+            count += 1
+
+        db.session.commit()
+        flash(f'Successfully processed {count} employee allocations from Excel!', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error processing Excel file: {str(e)}', 'danger')
+
+    return redirect(url_for('admin_dashboard'))
+
+@app.route('/admin/release-single', methods=['POST'])
+def release_single():
+    if session.get('role') != 'admin':
+        return redirect(url_for('login'))
+
+    emp_id = request.form.get('emp_id', '').strip()
+    name = request.form.get('name', '').strip()
+    amount = float(request.form.get('amount', 500.0))
+
+    if not emp_id:
+        flash('Employee ID is required.', 'warning')
+        return redirect(url_for('admin_dashboard'))
+
+    emp = Employee.query.filter_by(emp_id=emp_id).first()
+    if not emp:
+        qr_seed = str(uuid.uuid4())
+        emp = Employee(emp_id=emp_id, name=name or 'Employee', qr_code_id=qr_seed, balance=amount)
+        db.session.add(emp)
+        
+        if not User.query.filter_by(username=emp_id).first():
+            u = User(username=emp_id, password_hash=generate_password_hash('emp123'), role='employee')
+            db.session.add(u)
+    else:
+        emp.balance += amount
+
+    db.session.commit()
+    flash(f'Released {amount} coupon balance to employee {emp_id} successfully.', 'success')
+    return redirect(url_for('admin_dashboard'))
+
+@app.route('/admin/monthly-closing/approve', methods=['POST'])
+def approve_monthly_closing():
+    if session.get('role') != 'admin':
+        return redirect(url_for('login'))
+
+    try:
+        for m in Merchant.query.all():
+            m.collected_balance = 0.0
+        for e in Employee.query.all():
+            e.balance = 0.0
+
+        db.session.commit()
+        flash('Monthly closing approved successfully. All balances reset to 0.', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash('Failed to execute monthly closing.', 'danger')
+
     return redirect(url_for('admin_dashboard'))
 
 if __name__ == '__main__':
